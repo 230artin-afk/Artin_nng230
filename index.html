@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ARTIN_NNG Gaming</title>
+
+<style>
+body{
+    margin:0;
+    background:#050505;
+    color:white;
+    font-family:tahoma;
+    text-align:center;
+}
+
+body:before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:radial-gradient(circle,#00ffff55 2px,transparent 3px);
+    background-size:55px 55px;
+    animation:bg 15s linear infinite;
+    z-index:-1;
+}
+
+@keyframes bg{
+    from{background-position:0 0}
+    to{background-position:-400px -400px}
+}
+
+.box{
+    width:90%;
+    max-width:600px;
+    margin:25px auto;
+    padding:20px;
+    background:#111c;
+    border-radius:20px;
+    box-shadow:0 0 25px #00ffff55;
+}
+
+h1,h2{
+    color:#00ffff;
+}
+
+a{
+    display:block;
+    margin:12px;
+    padding:15px;
+    background:#00ffff;
+    color:black;
+    text-decoration:none;
+    border-radius:15px;
+    font-weight:bold;
+}
+</style>
+
+</head>
+
+<body>
+
+<h1>ARTIN_NNG</h1>
+<p>🎮 Gaming • Minecraft • Resource Pack</p>
+
+
+<div class="box">
+
+<h2>🌐 شبکه‌های اجتماعی</h2>
+
+<a href="https://rubika.ir/Artin_nng">
+روبیکا ARTIN_NNG
+</a>
+
+<a href="bale://ble.ir/Artin_nng">
+بله ARTIN_NNG
+</a>
+
+<a href="bale://ble.ir/Minecraft230">
+ریسورس پک بله
+</a>
+
+<a href="https://rubika.ir/minecraft230t">
+ریسورس پک روبیکا
+</a>
+
+</div>
+
+
+<div class="box">
+
+<h2>📅 برنامه روز</h2>
+
+<p id="plan">
+در حال دریافت...
+</p>
+
+</div>
+
+
+<script>
+
+const BIN_ID = "6a5d154bda38895dfe7315cd";
+
+
+async function loadPlan(){
+
+try{
+
+let res = await fetch(
+`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`
+);
+
+let data = await res.json();
+
+document.getElementById("plan").innerText =
+data.record.plan;
+
+}
+
+catch(e){
+
+document.getElementById("plan").innerText =
+"خطا در دریافت برنامه";
+
+}
+
+}
+
+
+loadPlan();
+
+</script>
+
+
+</body>
+</html>
