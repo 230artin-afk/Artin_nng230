@@ -54,6 +54,59 @@ a{
     border-radius:15px;
     font-weight:bold;
 }
+
+
+/* CHAT */
+
+.chat{
+height:350px;
+overflow-y:auto;
+background:#111;
+border-radius:15px;
+padding:10px;
+text-align:right;
+}
+
+.msg{
+background:#00ffff;
+color:black;
+padding:10px;
+border-radius:15px;
+margin:8px;
+}
+
+.name{
+font-size:12px;
+font-weight:bold;
+}
+
+.time{
+font-size:10px;
+opacity:.7;
+}
+
+
+.chat input{
+
+width:80%;
+padding:12px;
+border-radius:20px;
+border:none;
+margin:5px;
+
+}
+
+
+.chat button{
+
+padding:12px 20px;
+border:none;
+border-radius:20px;
+background:#00ffff;
+cursor:pointer;
+
+}
+
 </style>
 
 </head>
@@ -96,6 +149,34 @@ a{
 </p>
 
 </div>
+<!-- چت عمومی -->
+
+<div class="box">
+
+<h2>💬 چت عمومی ARTIN_NNG</h2>
+
+<div id="chat" class="chat">
+
+در حال دریافت پیام‌ها...
+
+</div>
+
+
+<input 
+id="username"
+placeholder="نام شما">
+
+
+<input 
+id="message"
+placeholder="پیام شما">
+
+
+<button onclick="sendMessage()">
+ارسال
+</button>
+
+</div>
 
 
 <script>
@@ -129,6 +210,114 @@ document.getElementById("plan").innerText =
 
 
 loadPlan();
+
+// ===== CHAT SUPABASE =====
+
+const SUPABASE_URL = "https://cqxueguuqmyryttbppcb.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_93n_d6h9xvNtVf73_UT0ZA_gW14NFX0";
+
+
+async function loadMessages(){
+
+let res = await fetch(
+SUPABASE_URL + "/rest/v1/messages?select=*&order=id.asc",
+{
+headers:{
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer " + SUPABASE_KEY
+}
+}
+);
+
+
+let data = await res.json();
+
+
+let chat = document.getElementById("chat");
+
+chat.innerHTML="";
+
+
+data.forEach(m=>{
+
+chat.innerHTML += `
+
+<div class="msg">
+
+<div class="name">
+${m.username}
+</div>
+
+${m.message}
+
+<div class="time">
+${new Date(m.created_at).toLocaleString("fa")}
+</div>
+
+</div>
+
+`;
+
+});
+
+
+chat.scrollTop = chat.scrollHeight;
+
+}
+
+
+
+async function sendMessage(){
+
+let username =
+document.getElementById("username").value;
+
+let message =
+document.getElementById("message").value;
+
+
+if(!username || !message){
+alert("نام و پیام را وارد کن");
+return;
+}
+
+
+await fetch(
+SUPABASE_URL + "/rest/v1/messages",
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer " + SUPABASE_KEY
+},
+
+body:JSON.stringify({
+
+username:username,
+
+message:message
+
+})
+
+});
+
+
+document.getElementById("message").value="";
+
+
+loadMessages();
+
+}
+
+
+
+loadMessages();
+
+setInterval(loadMessages,3000);
 
 </script>
 
