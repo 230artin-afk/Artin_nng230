@@ -245,8 +245,15 @@ chat.innerHTML += `
 
 <div class="msg">
 
-<div class="name">
+<div class="name"
+style="${m.is_admin ? "color:#ff0000;font-weight:bold;" : ""}">
+
+${m.is_admin ? "🛡️👑 " : ""}
+
 ${m.username}
+
+${m.is_admin ? " 🔥 ADMIN" : ""}
+
 </div>
 
 ${m.message}
