@@ -133,6 +133,26 @@ placeholder="پیام ادمین..."></textarea>
 
 </div>
 
+<div id="usersPanel" style="display:none">
+
+<div class="admin-users-box">
+
+<h2>👥 مدیریت کاربران</h2>
+
+<div>
+<input id="userSearch" placeholder="🔍 جستجوی ایمیل...">
+
+<button onclick="searchUsers()">
+🔍 جستجو
+</button>
+</div>
+
+<div id="usersList"></div>
+
+</div>
+
+</div>
+
 
 
 <script>
@@ -152,6 +172,10 @@ document.getElementById("password").value;
 if(pass=="6219"){
 
 document.getElementById("panel").style.display="block";
+
+document.getElementById("usersPanel").style.display="block";
+
+loadUsers();
 
 alert("ورود موفق");
 
@@ -330,10 +354,127 @@ loadMessages();
 
 }
 
+let allUsers=[];
+
+
+async function loadUsers(){
+
+let res = await fetch(
+SUPABASE_URL+"/rest/v1/profile?select=*",
+{
+headers:{
+"apikey":SUPABASE_KEY,
+"Authorization":
+"Bearer "+SUPABASE_KEY
+}
+}
+);
+
+
+allUsers = await res.json();
+
+console.log(allUsers);
+
+showUsers(allUsers);
+
+}
+
+
+
+function showUsers(users){
+
+let box=document.getElementById("usersList");
+
+box.innerHTML="";
+
+
+users.forEach(u=>{
+
+box.innerHTML += `
+
+<div class="box">
+
+<p>📧 ${u.email}</p>
+
+<p>
+${u.banned ? "🔴 بن شده" : "🟢 فعال"}
+</p>
+
+
+<button onclick="banUser('${u.id}',${!u.banned})">
+
+${u.banned ? "✅ رفع بن" : "🚫 بن"}
+
+</button>
+
+
+</div>
+
+`;
+
+});
+
+
+}
+
+
+
+function searchUsers(){
+
+alert(JSON.stringify(allUsers));
+
+
+let text =
+document.getElementById("userSearch").value
+.toLowerCase();
+
+
+let result =
+allUsers.filter(u=>
+u.email.toLowerCase().includes(text)
+);
+
+console.log(result);
+
+showUsers(result);
+
+}
+
+
+
+
+async function banUser(id,status){
+
+
+await fetch(
+SUPABASE_URL+"/rest/v1/profile?id=eq."+id,
+{
+
+method:"PATCH",
+
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_KEY,
+"Authorization":
+"Bearer "+SUPABASE_KEY
+},
+
+body:JSON.stringify({
+
+banned:status
+
+})
+
+});
+
+
+loadUsers();
+
+}
 
 </script>
 
 
 </body>
 
-</html>
+</html>l>>>
