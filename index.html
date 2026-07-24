@@ -529,6 +529,44 @@ let data = await res.json();
 
 if(data.access_token){
 
+let userRes = await fetch(
+SUPABASE_URL + "/auth/v1/user",
+{
+headers:{
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer " + data.access_token
+}
+}
+);
+
+let user = await userRes.json();
+
+
+let banRes = await fetch(
+SUPABASE_URL +
+"/rest/v1/profile?email=eq." +
+encodeURIComponent(user.email) +
+"&select=banned",
+{
+headers:{
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer " + SUPABASE_KEY
+}
+}
+);
+
+
+let banData = await banRes.json();
+
+
+if(banData.length > 0 && banData[0].banned){
+
+alert("⛔ این حساب توسط ادمین بن شده است.");
+
+return;
+
+}
+
 localStorage.setItem(
 "token",
 data.access_token
@@ -809,12 +847,45 @@ document.getElementById("changeStatus").innerHTML=
 
 }
 
+async function checkBanStatus(){
+
+    if(!currentUser) return;
+
+    let res = await fetch(
+        SUPABASE_URL +
+        "/rest/v1/profile?email=eq." +
+        encodeURIComponent(currentUser.email) +
+        "&select=banned",
+        {
+            headers:{
+                "apikey":SUPABASE_KEY,
+                "Authorization":"Bearer " + SUPABASE_KEY
+            }
+        }
+    );
+
+    let data = await res.json();
+
+    if(data.length > 0 && data[0].banned){
+
+        await logout();
+
+        alert("⛔ حساب شما توسط ادمین بن شده است.");
+
+        return;
+    }
+
+}
+
 checkLogin();
 
 
 loadMessages();
 
+
 setInterval(loadMessages,3000);
+
+setInterval(checkBanStatus,5000);
 
 </script>
 
