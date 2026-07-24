@@ -380,10 +380,6 @@ disabled>
 
 <script>
 
-window.addEventListener("load",()=>{
-    localStorage.removeItem("token");
-});
-
 const BIN_ID = "6a5d154bda38895dfe7315cd";
 
 
@@ -877,10 +873,15 @@ async function checkBanStatus(){
 
 }
 
-checkLogin();
+async function start(){
 
+await checkLogin();
 
-loadMessages();
+await loadMessages();
+
+}
+
+start();
 
 
 setInterval(loadMessages,3000);
