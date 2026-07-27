@@ -380,35 +380,6 @@ disabled>
 
 <script>
 
-const BIN_ID = "6a5d154bda38895dfe7315cd";
-
-
-async function loadPlan(){
-
-try{
-
-let res = await fetch(
-`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`
-);
-
-let data = await res.json();
-
-document.getElementById("plan").innerText =
-data.record.plan;
-
-}
-
-catch(e){
-
-document.getElementById("plan").innerText =
-"خطا در دریافت برنامه";
-
-}
-
-}
-
-
-loadPlan();
 
 // ===== CHAT SUPABASE =====
 
@@ -416,24 +387,45 @@ const SUPABASE_URL = "https://cqxueguuqmyryttbppcb.supabase.co";
 
 const SUPABASE_KEY = "sb_publishable_93n_d6h9xvNtVf73_UT0ZA_gW14NFX0";
 
+
+async function loadPlan(){
+
+let res = await fetch(
+SUPABASE_URL + "/rest/v1/daily_plan?select=content",
+{
+headers:{
+"apikey":SUPABASE_KEY
+}
+}
+);
+
+let data = await res.json();
+
+console.log(data);
+
+if(data[0]){
+document.getElementById("plan").innerText = data[0].content;
+}
+else{
+document.getElementById("plan").innerText="برنامه‌ای وجود ندارد";
+}
+
+}
+
+
+loadPlan();
+
 let currentUser = null;
 
 
 async function signUp(){
 
-let email =
-document.getElementById("email").value;
-
-let password =
-document.getElementById("password").value;
-
+let email = document.getElementById("email").value;
+let password = document.getElementById("password").value;
 
 if(!email || !password){
-
-alert("ایمیل و رمز را وارد کن");
-
-return;
-
+    alert("ایمیل و رمز را وارد کن");
+    return;
 }
 
 
@@ -455,39 +447,91 @@ password:password
 });
 
 
-if(res.ok){
+let data = await res.json();
+
+console.log(data);
+
+
+if(!data.user){
+
+alert("ثبت نام نشد:\n"+JSON.stringify(data));
+return;
+
+}
+
 
 alert("ثبت نام موفق شد ✅");
 
-let userData = await res.json();
 
-await fetch(
+let sessionRes = await fetch(
+SUPABASE_URL + "/auth/v1/token?grant_type=password",
+{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json",
+"apikey":SUPABASE_KEY
+},
+
+body:JSON.stringify({
+email:email,
+password:password
+})
+
+});
+
+
+let session = await sessionRes.json();
+
+
+if(!session.access_token){
+
+alert("Session ساخته نشد");
+return;
+
+}
+
+
+// ساخت پروفایل
+
+let profileRes = await fetch(
 SUPABASE_URL + "/rest/v1/profile",
 {
+
 method:"POST",
 
 headers:{
 "Content-Type":"application/json",
 "apikey":SUPABASE_KEY,
-"Authorization":"Bearer " + SUPABASE_KEY
+"Authorization":"Bearer "+session.access_token,
+"Prefer":"return=representation"
 },
 
 body:JSON.stringify({
-id:userData.user.id,
+
+id:data.user.id,
 email:email,
 username:email.split("@")[0],
-banned:false
+banned:false,
+is_admin:false
+
 })
+
 });
 
+
+let profile = await profileRes.text();
+
+if(profileRes.ok){
+    await signIn();
+}
+
+
+localStorage.setItem("token",session.access_token);
+
+
 await signIn();
-
-}
-
-else{
-let error = await res.text();
-alert(error);
-}
 
 }
 
@@ -524,6 +568,8 @@ let data = await res.json();
 
 
 if(data.access_token){
+
+localStorage.setItem("access_token",data.access_token);
 
 let userRes = await fetch(
 SUPABASE_URL + "/auth/v1/user",
@@ -563,14 +609,45 @@ return;
 
 }
 
-localStorage.setItem(
-"token",
-data.access_token
+let profileCheck = await fetch(
+SUPABASE_URL +
+"/rest/v1/profile?email=eq." +
+encodeURIComponent(user.email) +
+"&select=banned",
+{
+headers:{
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer " + data.access_token
+}
+}
 );
+
+
+let profileData = await profileCheck.json();
+
+
+if(profileData.length > 0 && profileData[0].banned === true){
+
+alert("⛔ حساب شما توسط ادمین بن شده است.");
+
+return;
+
+}
+
+currentUser = user;
 
 alert("ورود موفق شد ✅");
 
-location.reload();
+document.getElementById("message").disabled=false;
+document.getElementById("sendBtn").disabled=false;
+
+document.getElementById("loginStatus").innerHTML =
+"✅ وارد شده: " + currentUser.email.split("@")[0];
+
+document.getElementById("chat").innerHTML="";
+loadMessages();
+
+loadMessages();
 
 }
 
@@ -585,22 +662,27 @@ alert("ایمیل یا رمز اشتباه است");
 
 
 function logout(){
-
-localStorage.removeItem("token");
-
-location.reload();
-
+    currentUser = null;
+    localStorage.removeItem("token");
+    location.reload();
 }
 
 
 async function loadMessages(){
+
+if(!currentUser){
+    document.getElementById("chat").innerHTML =
+    "🔒 ابتدا وارد شوید";
+    return;
+}
+
 
 let res = await fetch(
 SUPABASE_URL + "/rest/v1/messages?select=*&order=id.asc",
 {
 headers:{
 "apikey":SUPABASE_KEY,
-"Authorization":"Bearer " + localStorage.getItem("token")
+"Authorization":"Bearer " + localStorage.getItem("access_token")
 }
 }
 );
@@ -687,7 +769,7 @@ method:"POST",
 headers:{
 "Content-Type":"application/json",
 "apikey":SUPABASE_KEY,
-"Authorization":"Bearer " + localStorage.getItem("token")
+"Authorization":"Bearer " + localStorage.getItem("access_token")
 },
 
 body:JSON.stringify({
@@ -729,21 +811,6 @@ headers:{
 }
 );
 
-
-if(res.ok){
-
-currentUser = await res.json();
-
-
-document.getElementById("message").disabled=false;
-
-document.getElementById("sendBtn").disabled=false;
-
-
-document.getElementById("loginStatus").innerHTML =
-"✅ وارد شده: " + currentUser.email.split("@")[0];
-
-}
 
 }
 
@@ -845,31 +912,39 @@ document.getElementById("changeStatus").innerHTML=
 
 async function checkBanStatus(){
 
-    if(!currentUser) return;
+if(!currentUser) return;
 
-    let res = await fetch(
-        SUPABASE_URL +
-        "/rest/v1/profile?email=eq." +
-        encodeURIComponent(currentUser.email) +
-        "&select=banned",
-        {
-            headers:{
-                "apikey":SUPABASE_KEY,
-                "Authorization":"Bearer " + SUPABASE_KEY
-            }
-        }
-    );
 
-    let data = await res.json();
+let res = await fetch(
+SUPABASE_URL +
+"/rest/v1/profile?email=eq."+
+encodeURIComponent(currentUser.email)+
+"&select=banned",
+{
+headers:{
+"apikey":SUPABASE_KEY,
+"Authorization":"Bearer "+localStorage.getItem("access_token")
+}
+}
+);
 
-    if(data.length > 0 && data[0].banned){
 
-        await logout();
+let data = await res.json();
 
-        alert("⛔ حساب شما توسط ادمین بن شده است.");
 
-        return;
-    }
+if(data[0]?.banned === true){
+
+alert("⛔ حساب شما بن شده است");
+
+currentUser=null;
+
+document.getElementById("message").disabled=true;
+document.getElementById("sendBtn").disabled=true;
+
+document.getElementById("loginStatus").innerHTML=
+"⛔ حساب بن شده";
+
+}
 
 }
 
