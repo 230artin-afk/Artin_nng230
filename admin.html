@@ -398,6 +398,7 @@ loadMessages();
 }
 
 let allUsers=[];
+let searchMode = false;
 
 
 async function loadUsers(){
@@ -418,7 +419,9 @@ allUsers = await res.json();
 
 console.log(allUsers);
 
-showUsers(allUsers);
+if(!searchMode){
+    showUsers(allUsers);
+}
 
 }
 
@@ -471,6 +474,14 @@ let text =
 document.getElementById("userSearch").value
 .toLowerCase();
 
+if(text.trim() === ""){
+    searchMode = false;
+    showUsers(allUsers);
+    return;
+}
+
+searchMode = true;
+
 
 let result =
 allUsers.filter(u=>
@@ -521,6 +532,7 @@ status ?
 "✅ بن کاربر برداشته شد"
 );
 
+searchMode = false;
 loadUsers();
 
 }else{
